@@ -1005,43 +1005,43 @@
 					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
 				end
 				
-			-- elseif (spellId == 409632) then
-				-- local breathTargets = augmentation_cache.breath_targets
-				-- local evokerWithEonsApplications = breathTargets[targetSerial]
-				-- local eonsSourcesFound = 0
-				-- local lastEvokerSerial = nil
-				-- local lastEvokerName = nil
-				-- local lastEvokerFlags = nil
-				-- local countAugMember = 0
-				-- if (evokerWithEonsApplications) then
-					-- --this table consists in a list of evokers who applied eon's breath on the target
-					-- for i = 1, #evokerWithEonsApplications do
-						-- ---@type evokereonsbreathinfo
-						-- local evokerInfo = evokerWithEonsApplications[i]
-						-- ---@type guid,         actorname,  controlflags, unit,           unixtime,    auraduration, gametime
-						-- local    evokerSerial, evokerName, evokerFlags,  unitIDAffected, appliedTime, duration,     expirationTime = unpack(evokerInfo)
-						-- if (detailsFramework:IsNearlyEqual(time, appliedTime + duration, 0.12)) then
-							-- eonsSourcesFound = eonsSourcesFound + 1
-							-- lastEvokerSerial = evokerSerial
-							-- lastEvokerName = evokerName
-							-- lastEvokerFlags = evokerFlags
-						-- end
-					-- end
-				-- end
-				-- if (aug_members_cache) then
-					-- countAugMember = #aug_members_cache
-				-- end
-				-- if (eonsSourcesFound == 1) then
-					-- sourceSerial = lastEvokerSerial
-					-- sourceName = lastEvokerName
-					-- sourceFlags = lastEvokerFlags
-				-- elseif (countAugMember >= 2) then
-					-- sourceName = Details.StackedBuffActorName
-					-- sourceFlags = 0x514
-					-- sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
-				-- elseif (countAugMember == 1) then
-					-- sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
-				-- end
+			elseif (spellId == 409632) then
+				local breathTargets = augmentation_cache.breath_targets
+				local evokerWithEonsApplications = breathTargets[targetSerial]
+				local eonsSourcesFound = 0
+				local lastEvokerSerial = nil
+				local lastEvokerName = nil
+				local lastEvokerFlags = nil
+				local countAugMember = 0
+				if (evokerWithEonsApplications) then
+					--this table consists in a list of evokers who applied eon's breath on the target
+					for i = 1, #evokerWithEonsApplications do
+						---@type evokereonsbreathinfo
+						local evokerInfo = evokerWithEonsApplications[i]
+						---@type guid,         actorname,  controlflags, unit,           unixtime,    auraduration, gametime
+						local    evokerSerial, evokerName, evokerFlags,  unitIDAffected, appliedTime, duration,     expirationTime = unpack(evokerInfo)
+						if (detailsFramework:IsNearlyEqual(time, appliedTime + duration, 0.12)) then
+							eonsSourcesFound = eonsSourcesFound + 1
+							lastEvokerSerial = evokerSerial
+							lastEvokerName = evokerName
+							lastEvokerFlags = evokerFlags
+						end
+					end
+				end
+				if (aug_members_cache) then
+					countAugMember = #aug_members_cache
+				end
+				if (eonsSourcesFound == 1) then
+					sourceSerial = lastEvokerSerial
+					sourceName = lastEvokerName
+					sourceFlags = lastEvokerFlags
+				elseif (countAugMember >= 2) then
+					sourceName = Details.StackedBuffActorName
+					sourceFlags = 0x514
+					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
+				elseif (countAugMember == 1) then
+					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
+				end
 			elseif (spellId == 432895) then --damage from thread of fate
 				local chronoThreadSource = cacheAnything.chronowarden_thread_fate[sourceSerial]
 				if (chronoThreadSource) then
@@ -1506,104 +1506,104 @@
 	--amount add
 
 		--~roskash - augmentation evoker damage buff
-		if (augmentation_cache.ebon_might[sourceSerial] or (ownerActor and augmentation_cache.ebon_might[ownerActor.serial])) then
-			--get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
-			local thisSourceSerial = (augmentation_cache.ebon_might[sourceSerial] and sourceSerial) or ownerActor.serial
+		-- if (augmentation_cache.ebon_might[sourceSerial] or (ownerActor and augmentation_cache.ebon_might[ownerActor.serial])) then
+			-- --get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
+			-- local thisSourceSerial = (augmentation_cache.ebon_might[sourceSerial] and sourceSerial) or ownerActor.serial
 
-			---actor buffed with ebonmight -> list of evokers whose buffed
-			---@type table<serial, evokerinfo[]>
-			local evokersWhoBuffedThisPlayer = augmentation_cache.ebon_might[thisSourceSerial]
+			-- ---actor buffed with ebonmight -> list of evokers whose buffed
+			-- ---@type table<serial, evokerinfo[]>
+			-- local evokersWhoBuffedThisPlayer = augmentation_cache.ebon_might[thisSourceSerial]
 
-			for i, evokerInfo in ipairs(evokersWhoBuffedThisPlayer) do
-				---@cast evokerInfo evokerinfo
-				---@type serial, actorname, controlflags
-				local evokerSourceSerial, evokerSourceName, evokerSourceFlags, attributedGained = unpack(evokerInfo)
+			-- for i, evokerInfo in ipairs(evokersWhoBuffedThisPlayer) do
+				-- ---@cast evokerInfo evokerinfo
+				-- ---@type serial, actorname, controlflags
+				-- local evokerSourceSerial, evokerSourceName, evokerSourceFlags, attributedGained = unpack(evokerInfo)
 
-				if (evokerSourceSerial ~= thisSourceSerial) then
-					---@type actor
-					local evokerActor = damage_cache[evokerSourceSerial]
-					if (not evokerActor) then
-						evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
-					end
+				-- if (evokerSourceSerial ~= thisSourceSerial) then
+					-- ---@type actor
+					-- local evokerActor = damage_cache[evokerSourceSerial]
+					-- if (not evokerActor) then
+						-- evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
+					-- end
 
-					if (evokerActor) then
-						local extraSpellId = 395152
-						evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
-						local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
-						if (not augmentedSpell) then
-							augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
-						end
+					-- if (evokerActor) then
+						-- local extraSpellId = 395152
+						-- evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
+						-- local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
+						-- if (not augmentedSpell) then
+							-- augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
+						-- end
 
-						--> calculate tier and ilevel bonuses; this values could be cached at the start of the combat
-							--local bHasFourPieces = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].tierAmount >= 4
-							local tierPieceMultiplier = 1 --bHasFourPieces and 1.08 or 1
-							local evokerItemLevel = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].ilevel or 400
-							evokerItemLevel = max(evokerItemLevel, 400)
-							local itemLevelMultiplier = 1 -- + ((evokerItemLevel - 400) * 0.006)
+						-- --> calculate tier and ilevel bonuses; this values could be cached at the start of the combat
+							-- --local bHasFourPieces = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].tierAmount >= 4
+							-- local tierPieceMultiplier = 1 --bHasFourPieces and 1.08 or 1
+							-- local evokerItemLevel = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].ilevel or 400
+							-- evokerItemLevel = max(evokerItemLevel, 400)
+							-- local itemLevelMultiplier = 1 -- + ((evokerItemLevel - 400) * 0.006)
 
-						local predictedAmount = 0
-						if (Details.zone_type == "raid") then --0x410b
-							predictedAmount = amount * (0.06947705 * tierPieceMultiplier * itemLevelMultiplier)
-						else
-							predictedAmount = amount * (0.07590444 * tierPieceMultiplier * itemLevelMultiplier)
-						end
+						-- local predictedAmount = 0
+						-- if (Details.zone_type == "raid") then --0x410b
+							-- predictedAmount = amount * (0.06947705 * tierPieceMultiplier * itemLevelMultiplier)
+						-- else
+							-- predictedAmount = amount * (0.07590444 * tierPieceMultiplier * itemLevelMultiplier)
+						-- end
 
-						--local damageSpellName = GetSpellInfo(spellId)
-						--print("EbonMight Cache:", Details.augmentation_cache, evokerSourceSerial, floor(amount), floor(predictedAmount), floor(predictedAmount/amount*100) .. "%", damageSpellName)
-						evokerActor.total_extra = evokerActor.total_extra + predictedAmount
-						augmentedSpell.total = augmentedSpell.total + predictedAmount
-						augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
+						-- --local damageSpellName = GetSpellInfo(spellId)
+						-- --print("EbonMight Cache:", Details.augmentation_cache, evokerSourceSerial, floor(amount), floor(predictedAmount), floor(predictedAmount/amount*100) .. "%", damageSpellName)
+						-- evokerActor.total_extra = evokerActor.total_extra + predictedAmount
+						-- augmentedSpell.total = augmentedSpell.total + predictedAmount
+						-- augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
 
-						if (Details.debug) then
-							DetailsParserDebugFrame:BlinkIcon(extraSpellId, 1)
-							DetailsParserDebugFrame.AllTexts[1]:SetText("Evokers Buffed: " .. #evokersWhoBuffedThisPlayer .. "  (" .. floor(predictedAmount / amount * 100) .. "%)")
-						end
-					end
-				end
-			end
-		end
+						-- if (Details.debug) then
+							-- DetailsParserDebugFrame:BlinkIcon(extraSpellId, 1)
+							-- DetailsParserDebugFrame.AllTexts[1]:SetText("Evokers Buffed: " .. #evokersWhoBuffedThisPlayer .. "  (" .. floor(predictedAmount / amount * 100) .. "%)")
+						-- end
+					-- end
+				-- end
+			-- end
+		-- end
 
-		if (augmentation_cache.ss[sourceSerial] or (ownerActor and augmentation_cache.ss[ownerActor.serial])) then --actor buffed with ss
-			--get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
-			local thisSourceSerial = augmentation_cache.ss[sourceSerial] and sourceSerial or ownerActor.serial
+		-- if (augmentation_cache.ss[sourceSerial] or (ownerActor and augmentation_cache.ss[ownerActor.serial])) then --actor buffed with ss
+			-- --get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
+			-- local thisSourceSerial = augmentation_cache.ss[sourceSerial] and sourceSerial or ownerActor.serial
 
-			---@type table<serial, evokerinfo[]>
-			local currentlyBuffedWithSS = augmentation_cache.ss[thisSourceSerial]
+			-- ---@type table<serial, evokerinfo[]>
+			-- local currentlyBuffedWithSS = augmentation_cache.ss[thisSourceSerial]
 
-			for i, evokerInfo in ipairs(currentlyBuffedWithSS) do
-				---@cast evokerInfo evokerinfo
-				---@type serial, actorname, controlflags
-				local evokerSourceSerial, evokerSourceName, evokerSourceFlags, versaBuff = unpack(evokerInfo)
+			-- for i, evokerInfo in ipairs(currentlyBuffedWithSS) do
+				-- ---@cast evokerInfo evokerinfo
+				-- ---@type serial, actorname, controlflags
+				-- local evokerSourceSerial, evokerSourceName, evokerSourceFlags, versaBuff = unpack(evokerInfo)
 
-				if (evokerSourceSerial ~= thisSourceSerial) then
-					---@type actor
-					local evokerActor = damage_cache[evokerSourceSerial]
-					if (not evokerActor) then
-						evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
-					end
+				-- if (evokerSourceSerial ~= thisSourceSerial) then
+					-- ---@type actor
+					-- local evokerActor = damage_cache[evokerSourceSerial]
+					-- if (not evokerActor) then
+						-- evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
+					-- end
 
-					if (evokerActor) then
-						local extraSpellId = 413984
-						evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
-						local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
-						if (not augmentedSpell) then
-							augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
-						end
+					-- if (evokerActor) then
+						-- local extraSpellId = 413984
+						-- evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
+						-- local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
+						-- if (not augmentedSpell) then
+							-- augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
+						-- end
 
-						versaBuff = versaBuff / 100
-						local predictedAmount = amount * versaBuff * 0.73548755 --0x410f
-						evokerActor.total_extra = evokerActor.total_extra + predictedAmount
+						-- versaBuff = versaBuff / 100
+						-- local predictedAmount = amount * versaBuff * 0.73548755 --0x410f
+						-- evokerActor.total_extra = evokerActor.total_extra + predictedAmount
 
-						augmentedSpell.total = augmentedSpell.total + predictedAmount
-						augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
+						-- augmentedSpell.total = augmentedSpell.total + predictedAmount
+						-- augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
 
-						if (Details.debug) then
-							--DetailsParserDebugFrame:BlinkIcon(extraSpellId, 2)
-						end
-					end
-				end
-			end
-		end
+						-- if (Details.debug) then
+							-- --DetailsParserDebugFrame:BlinkIcon(extraSpellId, 2)
+						-- end
+					-- end
+				-- end
+			-- end
+		-- end
 
 		--actor owner (if any)
 		if (ownerActor) then --se for dano de um Pet
