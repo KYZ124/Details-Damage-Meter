@@ -128,6 +128,9 @@
 		
 	--store the number of aug evokerSerial
 		local aug_members_cache = {}
+		
+	--store the number of dev and evokerSerial
+		local scalecommander_members_cache = {}
 
 	--store the gear of each player
 		local gearCache = {}
@@ -553,6 +556,7 @@
 		[360828] = true, --blistering scales
 		[409632] = true, --breath of eons
 		[432895] = true, --thread of fate
+		[434481] = true, --thread of fate
 		[384601] = true, --Anti Magic Bomb
 		[392171] = true, --Rose of the Vale
 		[392166] = true, --Azure Stone of Might
@@ -1001,47 +1005,59 @@
 					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
 				end
 				
-			elseif (spellId == 409632) then
-				local breathTargets = augmentation_cache.breath_targets
-				local evokerWithEonsApplications = breathTargets[targetSerial]
-				local eonsSourcesFound = 0
-				local lastEvokerSerial = nil
-				local lastEvokerName = nil
-				local lastEvokerFlags = nil
-				local countAugMember = 0
-				if (evokerWithEonsApplications) then
-					--this table consists in a list of evokers who applied eon's breath on the target
-					for i = 1, #evokerWithEonsApplications do
-						---@type evokereonsbreathinfo
-						local evokerInfo = evokerWithEonsApplications[i]
-						---@type guid,         actorname,  controlflags, unit,           unixtime,    auraduration, gametime
-						local    evokerSerial, evokerName, evokerFlags,  unitIDAffected, appliedTime, duration,     expirationTime = unpack(evokerInfo)
-						if (detailsFramework:IsNearlyEqual(time, appliedTime + duration, 0.12)) then
-							eonsSourcesFound = eonsSourcesFound + 1
-							lastEvokerSerial = evokerSerial
-							lastEvokerName = evokerName
-							lastEvokerFlags = evokerFlags
-						end
-					end
-				end
-				if (aug_members_cache) then
-					countAugMember = #aug_members_cache
-				end
-				if (eonsSourcesFound == 1) then
-					sourceSerial = lastEvokerSerial
-					sourceName = lastEvokerName
-					sourceFlags = lastEvokerFlags
-				elseif (countAugMember >= 2) then
-					sourceName = Details.StackedBuffActorName
-					sourceFlags = 0x514
-					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
-				elseif (countAugMember == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
-				end
+			-- elseif (spellId == 409632) then
+				-- local breathTargets = augmentation_cache.breath_targets
+				-- local evokerWithEonsApplications = breathTargets[targetSerial]
+				-- local eonsSourcesFound = 0
+				-- local lastEvokerSerial = nil
+				-- local lastEvokerName = nil
+				-- local lastEvokerFlags = nil
+				-- local countAugMember = 0
+				-- if (evokerWithEonsApplications) then
+					-- --this table consists in a list of evokers who applied eon's breath on the target
+					-- for i = 1, #evokerWithEonsApplications do
+						-- ---@type evokereonsbreathinfo
+						-- local evokerInfo = evokerWithEonsApplications[i]
+						-- ---@type guid,         actorname,  controlflags, unit,           unixtime,    auraduration, gametime
+						-- local    evokerSerial, evokerName, evokerFlags,  unitIDAffected, appliedTime, duration,     expirationTime = unpack(evokerInfo)
+						-- if (detailsFramework:IsNearlyEqual(time, appliedTime + duration, 0.12)) then
+							-- eonsSourcesFound = eonsSourcesFound + 1
+							-- lastEvokerSerial = evokerSerial
+							-- lastEvokerName = evokerName
+							-- lastEvokerFlags = evokerFlags
+						-- end
+					-- end
+				-- end
+				-- if (aug_members_cache) then
+					-- countAugMember = #aug_members_cache
+				-- end
+				-- if (eonsSourcesFound == 1) then
+					-- sourceSerial = lastEvokerSerial
+					-- sourceName = lastEvokerName
+					-- sourceFlags = lastEvokerFlags
+				-- elseif (countAugMember >= 2) then
+					-- sourceName = Details.StackedBuffActorName
+					-- sourceFlags = 0x514
+					-- sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
+				-- elseif (countAugMember == 1) then
+					-- sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
+				-- end
 			elseif (spellId == 432895) then --damage from thread of fate
 				local chronoThreadSource = cacheAnything.chronowarden_thread_fate[sourceSerial]
 				if (chronoThreadSource) then
 					sourceSerial, sourceName, sourceFlags = unpack(chronoThreadSource)
+				end
+			elseif (spellId == 434481) then
+				local countScalecommanderMember = 0
+				if (scalecommander_members_cache) then
+					countScalecommanderMember = #scalecommander_members_cache
+				end
+				if (countScalecommanderMember >= 2) then
+					sourceName = Details.StackedBuffActorName
+					sourceFlags = 0x514
+					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
+				elseif (countScalecommanderMember == 1) then
+					sourceSerial, sourceName, sourceFlags = unpack(scalecommander_members_cache[1])
 				end
 			elseif (Details.NeltharusWeaponSpellIds[spellId]) then
 				sourceName = Details.NeltharusWeaponActorName
@@ -6932,6 +6948,7 @@ local SPELL_POWER_PAIN = SPELL_POWER_PAIN or (PowerEnum and PowerEnum.Pain) or 1
 		Details:Destroy(bitfield_swap_cache)
 		Details:Destroy(empower_cache)
 		Details:Destroy(aug_members_cache)
+		Details:Destroy(scalecommander_members_cache)
 
 		local currentCombat = Details:GetCurrentCombat()
 
@@ -6965,8 +6982,16 @@ local SPELL_POWER_PAIN = SPELL_POWER_PAIN or (PowerEnum and PowerEnum.Pain) or 1
 				if (Details.cached_specs[unitGUID] == 1473) then
 					if (unitGUID == playerGUID) then
 						table.insert(aug_members_cache, {unitGUID, unitName, 0x511})
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x511})
 					else
 						table.insert(aug_members_cache, {unitGUID, unitName, 0x512})
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x512})
+					end
+				elseif (Details.cached_specs[unitGUID] == 1467) then
+					if (unitGUID == playerGUID) then
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x511})
+					else
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x512})
 					end
 				end
 			end
@@ -6995,8 +7020,16 @@ local SPELL_POWER_PAIN = SPELL_POWER_PAIN or (PowerEnum and PowerEnum.Pain) or 1
 				if (Details.cached_specs[unitGUID] == 1473) then
 					if (unitGUID == playerGUID) then
 						table.insert(aug_members_cache, {unitGUID, unitName, 0x511})
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x511})
 					else
 						table.insert(aug_members_cache, {unitGUID, unitName, 0x512})
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x512})
+					end
+				elseif (Details.cached_specs[unitGUID] == 1467) then
+					if (unitGUID == playerGUID) then
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x511})
+					else
+						table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x512})
 					end
 				end
 			end
@@ -7007,8 +7040,16 @@ local SPELL_POWER_PAIN = SPELL_POWER_PAIN or (PowerEnum and PowerEnum.Pain) or 1
 			if (Details.cached_specs[unitGUIDExtra] == 1473) then
 				if (unitGUID == playerGUID) then
 					table.insert(aug_members_cache, {unitGUIDExtra, unitNameExtra, 0x511})
+					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x511})
 				else
 					table.insert(aug_members_cache, {unitGUIDExtra, unitNameExtra, 0x512})
+					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x512})
+				end
+			elseif (Details.cached_specs[unitGUIDExtra] == 1467) then
+				if (unitGUID == playerGUID) then
+					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x511})
+				else
+					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x512})
 				end
 			end
 
@@ -7051,6 +7092,9 @@ local SPELL_POWER_PAIN = SPELL_POWER_PAIN or (PowerEnum and PowerEnum.Pain) or 1
 				
 			if (Details.cached_specs[playerGUID] == 1473) then
 				table.insert(aug_members_cache, {unitGUID, unitName, 0x511})
+				table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x511})
+			elseif (Details.cached_specs[playerGUID] == 1467) then
+				table.insert(scalecommander_members_cache, {unitGUID, unitName, 0x511})
 			end
 		end
 
