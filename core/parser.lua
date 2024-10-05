@@ -122,6 +122,7 @@
 			arenaHealth = {},
 			paladin_vivaldi_blessings = {},
 			chronowarden_thread_fate = {},
+			scalecommander_bombardments = {},
 			track_hunter_frenzy = false,
 			rampage_cast_amount = {},
 		}
@@ -1044,25 +1045,31 @@
 				end
 			elseif (spellId == 432895) then --damage from thread of fate
 				local chronoThreadSource = cacheAnything.chronowarden_thread_fate[sourceSerial]
-				if (chronoThreadSource) then
+				if (cacheAnything.chronowarden_thread_fate[sourceSerial]) then
 					sourceSerial, sourceName, sourceFlags = unpack(chronoThreadSource)
 				end
 			elseif (spellId == 434481) then
 				local countScalecommanderMember = 0
+				local countBombardmentsCasters = 0
 				if (scalecommander_members_cache) then
 					countScalecommanderMember = #scalecommander_members_cache
 				end
-				if (countScalecommanderMember >= 2) then
+				if (cacheAnything.scalecommander_bombardments) then
+					countBombardmentsCasters = #cacheAnything.scalecommander_bombardments
+				end
+				if (countScalecommanderMember == 1) then
+					for k, v in pairs(cacheAnything.scalecommander_bombardments) do
+						sourceSerial, sourceName, sourceFlags = k, unpack(v)
+					end
+				elseif (countScalecommanderMember >= 2 and countBombardmentsCasters >= 2) then
 					sourceName = Details.StackedBuffActorName
 					sourceFlags = 0x514
-					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
 				elseif (countScalecommanderMember == 1) then
 					sourceSerial, sourceName, sourceFlags = unpack(scalecommander_members_cache[1])
 				end
 			elseif (Details.NeltharusWeaponSpellIds[spellId]) then
 				sourceName = Details.NeltharusWeaponActorName
 				sourceFlags = 0x514
-				sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
 			end
 		end
 
@@ -3106,6 +3113,15 @@
 					parser:add_bad_debuff_uptime (token, time, sourceSerial, sourceName, sourceFlags, targetSerial, targetName, targetFlags, targetFlags2, spellId, spellName, spellschool, "DEBUFF_UPTIME_IN")
 				end
 			end
+			
+			
+			if (spellId == 434473) then --scalecommander bombardments
+				if (cacheAnything.scalecommander_bombardments[sourceSerial]) then
+					cacheAnything.scalecommander_bombardments[sourceSerial][3] = cacheAnything.scalecommander_bombardments[sourceSerial][3] + 1
+				else
+					cacheAnything.scalecommander_bombardments[sourceSerial] = {sourceName, sourceFlags, 1}
+				end
+			end
 		end
 	end
 
@@ -3339,6 +3355,15 @@
 
 				if ((bitfield_debuffs[spellName] or bitfield_debuffs[spellId]) and targetSerial) then
 					bitfield_swap_cache[targetSerial] = nil
+				end
+			end
+			
+			if (spellId == 434473) then --scalecommander bombardments
+				if (cacheAnything.scalecommander_bombardments[sourceSerial]) then
+					cacheAnything.scalecommander_bombardments[sourceSerial][3] = math.max(cacheAnything.scalecommander_bombardments[sourceSerial][3] - 1, 0)
+					if (cacheAnything.scalecommander_bombardments[sourceSerial][3] == 0) then
+						cacheAnything.scalecommander_bombardments[sourceSerial] = nil
+					end
 				end
 			end
 		end
