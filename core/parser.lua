@@ -557,12 +557,23 @@
 		[360828] = true, --blistering scales
 		[409632] = true, --breath of eons
 		[432895] = true, --thread of fate
-		[434481] = true, --thread of fate
+		[434481] = true, --bombardments
 		[384601] = true, --Anti Magic Bomb
 		[392171] = true, --Rose of the Vale
 		[392166] = true, --Azure Stone of Might
 		[379020] = true, --Wand of Negation
 		[372824] = true, --Burning Chains
+	}
+	
+	--damage spells that need reattribution
+	local external_damage_spells = {
+		[388009] = true, --blessing of summer
+		[410265] = true, --inferno's blessing
+		[404908] = true, --fate mirror
+		[360828] = true, --blistering scales
+		[409632] = true, --breath of eons
+		[432895] = true, --thread of fate
+		[434481] = true, --bombardments
 	}
 
 	--damage spells to ignore
@@ -909,10 +920,12 @@
 				end
 			end
 		end
+		
 
 		--check if the spellId has an especial treatment
 		if (special_damage_spells[spellId]) then
 			--stagger
+
 			if (spellId == 124255) then
 				return parser:MonkStagger_damage(token, time, sourceSerial, sourceName, sourceFlags, targetSerial, targetName, targetFlags, spellId, spellName, spellType, amount, overkill, school, resisted, blocked, absorbed, critical, glacing, crushing, isoffhand)
 
@@ -931,142 +944,12 @@
 						sourceFlags = ownerFlags
 					end
 				end
-
+			elseif (external_damage_spells[spellId]) then
+				sourceSerial, sourceName, sourceFlags = parser:external_damage(spellId, sourceSerial, sourceName, sourceFlags, targetSerial)
 			--Light of the Martyr - paladin spell which causes damage to the caster it self
 			elseif (spellId == 196917) then -- or spellid == 183998 < healing part
 				return parser:LOTM_damage(token, time, sourceSerial, sourceName, sourceFlags, targetSerial, targetName, targetFlags, spellId, spellName, spellType, amount, overkill, school, resisted, blocked, absorbed, critical, glacing, crushing, isoffhand)
 
-			elseif (spellId == 388009) then --damage from the paladin blessings of the seasons
-				local blessingSource = cacheAnything.paladin_vivaldi_blessings[sourceSerial]
-				if (blessingSource) then
-					sourceSerial, sourceName, sourceFlags = unpack(blessingSource)
-				end
-				
-			elseif (spellId == 410265) then --damage from inferno's blessing
-				local currentlyBuffedWithInfernoBless = nil
-				local countBuffedWithInfernoBless = 0
-				local countAugMember = 0
-				if (augmentation_cache.infernobless[sourceSerial]) then
-					currentlyBuffedWithInfernoBless = augmentation_cache.infernobless[sourceSerial]
-					countBuffedWithInfernoBless = #currentlyBuffedWithInfernoBless
-				end
-				if (aug_members_cache) then
-					countAugMember = #aug_members_cache
-				end
-				if (countBuffedWithInfernoBless == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(currentlyBuffedWithInfernoBless[1])
-				elseif (countAugMember >= 2) then
-					sourceName = Details.StackedBuffActorName
-					sourceFlags = 0x514
-					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
-				elseif (countAugMember == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
-				end
-				
-			elseif (spellId == 404908) then --damage from fate mirror
-				local currentlyBuffedWithPrescience = nil
-				local countBuffedWithPrescience = 0
-				local countAugMember = 0
-				if (augmentation_cache.prescience[sourceSerial]) then
-					currentlyBuffedWithPrescience = augmentation_cache.prescience[sourceSerial]
-					countBuffedWithPrescience = #currentlyBuffedWithPrescience
-				end
-				if (aug_members_cache) then
-					countAugMember = #aug_members_cache
-				end
-				if (countBuffedWithPrescience == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(currentlyBuffedWithPrescience[1])
-				elseif (countAugMember >= 2) then
-					Details:Msg("Stacked buff from: ", sourceName)
-					sourceName = Details.StackedBuffActorName
-					sourceFlags = 0x514
-					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
-				elseif (countAugMember == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
-				end
-				
-			elseif (spellId == 360828) then --damage from blistering scales
-				local currentlyBuffedWithBlistering = nil
-				local countBuffedWithBlistering = 0
-				local countAugMember = 0
-				if (augmentation_cache.shield[sourceSerial]) then
-					currentlyBuffedWithBlistering = augmentation_cache.shield[sourceSerial]
-					countBuffedWithBlistering = #currentlyBuffedWithBlistering
-				end
-				if (aug_members_cache) then
-					countAugMember = #aug_members_cache
-				end
-				if (countBuffedWithBlistering == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(currentlyBuffedWithBlistering[1])
-				elseif (countAugMember >= 2) then
-					sourceName = Details.StackedBuffActorName
-					sourceFlags = 0x514
-					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
-				elseif (countAugMember == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
-				end
-				
-			elseif (spellId == 409632) then
-				local breathTargets = augmentation_cache.breath_targets
-				local evokerWithEonsApplications = breathTargets[targetSerial]
-				local eonsSourcesFound = 0
-				local lastEvokerSerial = nil
-				local lastEvokerName = nil
-				local lastEvokerFlags = nil
-				local countAugMember = 0
-				if (evokerWithEonsApplications) then
-					--this table consists in a list of evokers who applied eon's breath on the target
-					for i = 1, #evokerWithEonsApplications do
-						---@type evokereonsbreathinfo
-						local evokerInfo = evokerWithEonsApplications[i]
-						---@type guid,         actorname,  controlflags, unit,           unixtime,    auraduration, gametime
-						local    evokerSerial, evokerName, evokerFlags,  unitIDAffected, appliedTime, duration,     expirationTime = unpack(evokerInfo)
-						if (detailsFramework:IsNearlyEqual(time, appliedTime + duration, 0.12)) then
-							eonsSourcesFound = eonsSourcesFound + 1
-							lastEvokerSerial = evokerSerial
-							lastEvokerName = evokerName
-							lastEvokerFlags = evokerFlags
-						end
-					end
-				end
-				if (aug_members_cache) then
-					countAugMember = #aug_members_cache
-				end
-				if (eonsSourcesFound == 1) then
-					sourceSerial = lastEvokerSerial
-					sourceName = lastEvokerName
-					sourceFlags = lastEvokerFlags
-				elseif (countAugMember >= 2) then
-					sourceName = Details.StackedBuffActorName
-					sourceFlags = 0x514
-					sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
-				elseif (countAugMember == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(aug_members_cache[1])
-				end
-			elseif (spellId == 432895) then --damage from thread of fate
-				local chronoThreadSource = cacheAnything.chronowarden_thread_fate[sourceSerial]
-				if (cacheAnything.chronowarden_thread_fate[sourceSerial]) then
-					sourceSerial, sourceName, sourceFlags = unpack(chronoThreadSource)
-				end
-			elseif (spellId == 434481) then
-				local countScalecommanderMember = 0
-				local countBombardmentsCasters = 0
-				if (scalecommander_members_cache) then
-					countScalecommanderMember = #scalecommander_members_cache
-				end
-				if (cacheAnything.scalecommander_bombardments) then
-					countBombardmentsCasters = #cacheAnything.scalecommander_bombardments
-				end
-				if (countScalecommanderMember == 1) then
-					for k, v in pairs(cacheAnything.scalecommander_bombardments) do
-						sourceSerial, sourceName, sourceFlags = k, unpack(v)
-					end
-				elseif (countScalecommanderMember >= 2 and countBombardmentsCasters >= 2) then
-					sourceName = Details.StackedBuffActorName
-					sourceFlags = 0x514
-				elseif (countScalecommanderMember == 1) then
-					sourceSerial, sourceName, sourceFlags = unpack(scalecommander_members_cache[1])
-				end
 			elseif (Details.NeltharusWeaponSpellIds[spellId]) then
 				sourceName = Details.NeltharusWeaponActorName
 				sourceFlags = 0x514
@@ -1513,104 +1396,104 @@
 	--amount add
 
 		--~roskash - augmentation evoker damage buff
-		-- if (augmentation_cache.ebon_might[sourceSerial] or (ownerActor and augmentation_cache.ebon_might[ownerActor.serial])) then
-			-- --get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
-			-- local thisSourceSerial = (augmentation_cache.ebon_might[sourceSerial] and sourceSerial) or ownerActor.serial
+		if (augmentation_cache.ebon_might[sourceSerial] or (ownerActor and augmentation_cache.ebon_might[ownerActor.serial])) then
+			--get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
+			local thisSourceSerial = (augmentation_cache.ebon_might[sourceSerial] and sourceSerial) or ownerActor.serial
 
-			-- ---actor buffed with ebonmight -> list of evokers whose buffed
-			-- ---@type table<serial, evokerinfo[]>
-			-- local evokersWhoBuffedThisPlayer = augmentation_cache.ebon_might[thisSourceSerial]
+			---actor buffed with ebonmight -> list of evokers whose buffed
+			---@type table<serial, evokerinfo[]>
+			local evokersWhoBuffedThisPlayer = augmentation_cache.ebon_might[thisSourceSerial]
 
-			-- for i, evokerInfo in ipairs(evokersWhoBuffedThisPlayer) do
-				-- ---@cast evokerInfo evokerinfo
-				-- ---@type serial, actorname, controlflags
-				-- local evokerSourceSerial, evokerSourceName, evokerSourceFlags, attributedGained = unpack(evokerInfo)
+			for i, evokerInfo in ipairs(evokersWhoBuffedThisPlayer) do
+				---@cast evokerInfo evokerinfo
+				---@type serial, actorname, controlflags
+				local evokerSourceSerial, evokerSourceName, evokerSourceFlags, attributedGained = unpack(evokerInfo)
 
-				-- if (evokerSourceSerial ~= thisSourceSerial) then
-					-- ---@type actor
-					-- local evokerActor = damage_cache[evokerSourceSerial]
-					-- if (not evokerActor) then
-						-- evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
-					-- end
+				if (evokerSourceSerial ~= thisSourceSerial) then
+					---@type actor
+					local evokerActor = damage_cache[evokerSourceSerial]
+					if (not evokerActor) then
+						evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
+					end
 
-					-- if (evokerActor) then
-						-- local extraSpellId = 395152
-						-- evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
-						-- local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
-						-- if (not augmentedSpell) then
-							-- augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
-						-- end
+					if (evokerActor) then
+						local extraSpellId = 395152
+						evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
+						local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
+						if (not augmentedSpell) then
+							augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
+						end
 
-						-- --> calculate tier and ilevel bonuses; this values could be cached at the start of the combat
-							-- --local bHasFourPieces = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].tierAmount >= 4
-							-- local tierPieceMultiplier = 1 --bHasFourPieces and 1.08 or 1
-							-- local evokerItemLevel = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].ilevel or 400
-							-- evokerItemLevel = max(evokerItemLevel, 400)
-							-- local itemLevelMultiplier = 1 -- + ((evokerItemLevel - 400) * 0.006)
+						--> calculate tier and ilevel bonuses; this values could be cached at the start of the combat
+							--local bHasFourPieces = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].tierAmount >= 4
+							local tierPieceMultiplier = 1 --bHasFourPieces and 1.08 or 1
+							local evokerItemLevel = gearCache[evokerSourceSerial] and gearCache[evokerSourceSerial].ilevel or 400
+							evokerItemLevel = max(evokerItemLevel, 400)
+							local itemLevelMultiplier = 1 -- + ((evokerItemLevel - 400) * 0.006)
 
-						-- local predictedAmount = 0
-						-- if (Details.zone_type == "raid") then --0x410b
-							-- predictedAmount = amount * (0.06947705 * tierPieceMultiplier * itemLevelMultiplier)
-						-- else
-							-- predictedAmount = amount * (0.07590444 * tierPieceMultiplier * itemLevelMultiplier)
-						-- end
+						local predictedAmount = 0
+						if (Details.zone_type == "raid") then --0x410b
+							predictedAmount = amount * (0.06947705 * tierPieceMultiplier * itemLevelMultiplier)
+						else
+							predictedAmount = amount * (0.07590444 * tierPieceMultiplier * itemLevelMultiplier)
+						end
 
-						-- --local damageSpellName = GetSpellInfo(spellId)
-						-- --print("EbonMight Cache:", Details.augmentation_cache, evokerSourceSerial, floor(amount), floor(predictedAmount), floor(predictedAmount/amount*100) .. "%", damageSpellName)
-						-- evokerActor.total_extra = evokerActor.total_extra + predictedAmount
-						-- augmentedSpell.total = augmentedSpell.total + predictedAmount
-						-- augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
+						--local damageSpellName = GetSpellInfo(spellId)
+						--print("EbonMight Cache:", Details.augmentation_cache, evokerSourceSerial, floor(amount), floor(predictedAmount), floor(predictedAmount/amount*100) .. "%", damageSpellName)
+						evokerActor.total_extra = evokerActor.total_extra + predictedAmount
+						augmentedSpell.total = augmentedSpell.total + predictedAmount
+						augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
 
-						-- if (Details.debug) then
-							-- DetailsParserDebugFrame:BlinkIcon(extraSpellId, 1)
-							-- DetailsParserDebugFrame.AllTexts[1]:SetText("Evokers Buffed: " .. #evokersWhoBuffedThisPlayer .. "  (" .. floor(predictedAmount / amount * 100) .. "%)")
-						-- end
-					-- end
-				-- end
-			-- end
-		-- end
+						if (Details.debug) then
+							DetailsParserDebugFrame:BlinkIcon(extraSpellId, 1)
+							DetailsParserDebugFrame.AllTexts[1]:SetText("Evokers Buffed: " .. #evokersWhoBuffedThisPlayer .. "  (" .. floor(predictedAmount / amount * 100) .. "%)")
+						end
+					end
+				end
+			end
+		end
 
-		-- if (augmentation_cache.ss[sourceSerial] or (ownerActor and augmentation_cache.ss[ownerActor.serial])) then --actor buffed with ss
-			-- --get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
-			-- local thisSourceSerial = augmentation_cache.ss[sourceSerial] and sourceSerial or ownerActor.serial
+		if (augmentation_cache.ss[sourceSerial] or (ownerActor and augmentation_cache.ss[ownerActor.serial])) then --actor buffed with ss
+			--get the serial number of the player who did the damage, in case of a pet or minion use the owner serial
+			local thisSourceSerial = augmentation_cache.ss[sourceSerial] and sourceSerial or ownerActor.serial
 
-			-- ---@type table<serial, evokerinfo[]>
-			-- local currentlyBuffedWithSS = augmentation_cache.ss[thisSourceSerial]
+			---@type table<serial, evokerinfo[]>
+			local currentlyBuffedWithSS = augmentation_cache.ss[thisSourceSerial]
 
-			-- for i, evokerInfo in ipairs(currentlyBuffedWithSS) do
-				-- ---@cast evokerInfo evokerinfo
-				-- ---@type serial, actorname, controlflags
-				-- local evokerSourceSerial, evokerSourceName, evokerSourceFlags, versaBuff = unpack(evokerInfo)
+			for i, evokerInfo in ipairs(currentlyBuffedWithSS) do
+				---@cast evokerInfo evokerinfo
+				---@type serial, actorname, controlflags
+				local evokerSourceSerial, evokerSourceName, evokerSourceFlags, versaBuff = unpack(evokerInfo)
 
-				-- if (evokerSourceSerial ~= thisSourceSerial) then
-					-- ---@type actor
-					-- local evokerActor = damage_cache[evokerSourceSerial]
-					-- if (not evokerActor) then
-						-- evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
-					-- end
+				if (evokerSourceSerial ~= thisSourceSerial) then
+					---@type actor
+					local evokerActor = damage_cache[evokerSourceSerial]
+					if (not evokerActor) then
+						evokerActor = _current_damage_container:GetOrCreateActor(evokerSourceSerial, evokerSourceName, evokerSourceFlags, true)
+					end
 
-					-- if (evokerActor) then
-						-- local extraSpellId = 413984
-						-- evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
-						-- local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
-						-- if (not augmentedSpell) then
-							-- augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
-						-- end
+					if (evokerActor) then
+						local extraSpellId = 413984
+						evokerActor.augmentedSpellsContainer = evokerActor.augmentedSpellsContainer or spellContainerClass:CreateSpellContainer(Details.container_type.CONTAINER_DAMAGE_CLASS)
+						local augmentedSpell = evokerActor.augmentedSpellsContainer._ActorTable[extraSpellId]
+						if (not augmentedSpell) then
+							augmentedSpell = evokerActor.augmentedSpellsContainer:GetOrCreateSpell(extraSpellId, true, token)
+						end
 
-						-- versaBuff = versaBuff / 100
-						-- local predictedAmount = amount * versaBuff * 0.73548755 --0x410f
-						-- evokerActor.total_extra = evokerActor.total_extra + predictedAmount
+						versaBuff = versaBuff / 100
+						local predictedAmount = amount * versaBuff * 0.73548755 --0x410f
+						evokerActor.total_extra = evokerActor.total_extra + predictedAmount
 
-						-- augmentedSpell.total = augmentedSpell.total + predictedAmount
-						-- augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
+						augmentedSpell.total = augmentedSpell.total + predictedAmount
+						augmentedSpell.targets[sourceName] = (augmentedSpell.targets[sourceName] or 0) + predictedAmount
 
-						-- if (Details.debug) then
-							-- --DetailsParserDebugFrame:BlinkIcon(extraSpellId, 2)
-						-- end
-					-- end
-				-- end
-			-- end
-		-- end
+						if (Details.debug) then
+							--DetailsParserDebugFrame:BlinkIcon(extraSpellId, 2)
+						end
+					end
+				end
+			end
+		end
 
 		--actor owner (if any)
 		if (ownerActor) then --se for dano de um Pet
@@ -2039,6 +1922,146 @@
 		end
 	end
 
+	--returns the serial, name, and flags that the damage should be attributed to
+	--separate function due to main function becoming oversized
+	function parser:external_damage(spellId, sourceSerial, sourceName, sourceFlags, targetSerial)
+		local newSerial = sourceSerial
+		local newName = sourceName
+		local newFlags = sourceFlags
+		Details:Msg("External damage called successfully. Input values of: ", spellId, sourceSerial, sourceName, sourceFlags, targetSerial)
+		if (spellId == 388009) then --damage from the paladin blessings of the seasons
+			local blessingSource = cacheAnything.paladin_vivaldi_blessings[sourceSerial]
+			if (blessingSource) then
+				newSerial, newName, newFlags = unpack(blessingSource)
+			end
+			
+		elseif (spellId == 410265) then --damage from inferno's blessing
+			local currentlyBuffedWithInfernoBless = nil
+			local countBuffedWithInfernoBless = 0
+			local countAugMember = 0
+			if (augmentation_cache.infernobless[sourceSerial]) then
+				currentlyBuffedWithInfernoBless = augmentation_cache.infernobless[sourceSerial]
+				countBuffedWithInfernoBless = #currentlyBuffedWithInfernoBless
+			end
+			if (aug_members_cache) then
+				countAugMember = #aug_members_cache
+			end
+			if (countBuffedWithInfernoBless == 1) then
+				sourceSerial, sourceName, sourceFlags = unpack(currentlyBuffedWithInfernoBless[1])
+			elseif (countAugMember >= 2) then
+				newName = Details.StackedBuffActorName
+				newFlags = 0x514
+				newSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
+			elseif (countAugMember == 1) then
+				newSerial, newName, newFlags = unpack(aug_members_cache[1])
+			end
+			
+		elseif (spellId == 404908) then --damage from fate mirror
+			local currentlyBuffedWithPrescience = nil
+			local countBuffedWithPrescience = 0
+			local countAugMember = 0
+			if (augmentation_cache.prescience[sourceSerial]) then
+				currentlyBuffedWithPrescience = augmentation_cache.prescience[sourceSerial]
+				countBuffedWithPrescience = #currentlyBuffedWithPrescience
+			end
+			if (aug_members_cache) then
+				countAugMember = #aug_members_cache
+			end
+			if (countBuffedWithPrescience == 1) then
+				newSerial, newName, newFlags = unpack(currentlyBuffedWithPrescience[1])
+			elseif (countAugMember >= 2) then
+				newName = Details.StackedBuffActorName
+				newFlags = 0x514
+				newSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
+			elseif (countAugMember == 1) then
+				newSerial, newName, newFlags = unpack(aug_members_cache[1])
+			end
+			
+		elseif (spellId == 360828) then --damage from blistering scales
+			local currentlyBuffedWithBlistering = nil
+			local countBuffedWithBlistering = 0
+			local countAugMember = 0
+			if (augmentation_cache.shield[sourceSerial]) then
+				currentlyBuffedWithBlistering = augmentation_cache.shield[sourceSerial]
+				countBuffedWithBlistering = #currentlyBuffedWithBlistering
+			end
+			if (aug_members_cache) then
+				countAugMember = #aug_members_cache
+			end
+			if (countBuffedWithBlistering == 1) then
+				newSerial, newName, newFlags = unpack(currentlyBuffedWithBlistering[1])
+			elseif (countAugMember >= 2) then
+				newName = Details.StackedBuffActorName
+				newFlags = 0x514
+				newSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
+			elseif (countAugMember == 1) then
+				newSerial, newName, newFlags = unpack(aug_members_cache[1])
+			end
+			
+		elseif (spellId == 409632) then
+			local breathTargets = augmentation_cache.breath_targets
+			local evokerWithEonsApplications = breathTargets[targetSerial]
+			local eonsSourcesFound = 0
+			local lastEvokerSerial = nil
+			local lastEvokerName = nil
+			local lastEvokerFlags = nil
+			local countAugMember = 0
+			if (evokerWithEonsApplications) then
+				--this table consists in a list of evokers who applied eon's breath on the target
+				for i = 1, #evokerWithEonsApplications do
+					---@type evokereonsbreathinfo
+					local evokerInfo = evokerWithEonsApplications[i]
+					---@type guid,         actorname,  controlflags, unit,           unixtime,    auraduration, gametime
+					local    evokerSerial, evokerName, evokerFlags,  unitIDAffected, appliedTime, duration,     expirationTime = unpack(evokerInfo)
+					if (detailsFramework:IsNearlyEqual(time, appliedTime + duration, 0.12)) then
+						eonsSourcesFound = eonsSourcesFound + 1
+						lastEvokerSerial = evokerSerial
+						lastEvokerName = evokerName
+						lastEvokerFlags = evokerFlags
+					end
+				end
+			end
+			if (aug_members_cache) then
+				countAugMember = #aug_members_cache
+			end
+			if (eonsSourcesFound == 1) then
+				newSerial = lastEvokerSerial
+				newName = lastEvokerName
+				newFlags = lastEvokerFlags
+			elseif (countAugMember >= 2) then
+				newName = Details.StackedBuffActorName
+				newFlags = 0x514
+				newSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
+			elseif (countAugMember == 1) then
+				newSerial, newName, newFlags = unpack(aug_members_cache[1])
+			end
+		elseif (spellId == 432895) then --damage from thread of fate
+			local chronoThreadSource = cacheAnything.chronowarden_thread_fate[sourceSerial]
+			if (cacheAnything.chronowarden_thread_fate[sourceSerial]) then
+				newSerial, newName, newFlags = unpack(chronoThreadSource)
+			end
+		elseif (spellId == 434481) then
+			local countScalecommanderMember = 0
+			local countBombardmentsCasters = 0
+			if (scalecommander_members_cache) then
+				countScalecommanderMember = #scalecommander_members_cache
+			end
+			if (cacheAnything.scalecommander_bombardments) then
+				countBombardmentsCasters = #cacheAnything.scalecommander_bombardments
+			end
+			if (countScalecommanderMember == 1) then
+				for k, v in pairs(cacheAnything.scalecommander_bombardments) do
+					newSerial, newName, newFlags = k, unpack(v)
+				end
+			elseif (countScalecommanderMember >= 2 and countBombardmentsCasters >= 2) then
+				newName = Details.StackedBuffActorName
+				newFlags = 0x514
+			elseif (countScalecommanderMember == 1) then
+				newSerial, newName, newFlags = unpack(scalecommander_members_cache[1])
+			end
+		end
+		return newSerial, newName, newFlags
+	end
 	--extra attacks - disabled
 	function parser:spell_dmg_extra_attacks(token, time, who_serial, who_name, who_flags, _, _, _, _, spellid, spellName, spelltype, arg1)
 		--print("this is even exists on ingame cleu?")
@@ -2589,7 +2612,6 @@
 			if (countBuffedWithPrescience == 1) then
 				sourceSerial, sourceName, sourceFlags = unpack(currentlyBuffedWithPrescience[1])
 			elseif (countAugMember >= 2) then
-				Details:Msg("Stacked buff from: ", sourceName)
 				sourceName = Details.StackedBuffActorName
 				sourceFlags = 0x514
 				sourceSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
