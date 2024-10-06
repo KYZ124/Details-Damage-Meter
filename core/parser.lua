@@ -3148,7 +3148,6 @@
 				else
 					cacheAnything.scalecommander_bombardments[sourceSerial] = {sourceName, sourceFlags, 1}
 				end
-				Details:Msg(sourceName, cacheAnything.scalecommander_bombardments[sourceSerial][3])
 			end
 		end
 	end
