@@ -945,7 +945,7 @@
 					end
 				end
 			elseif (external_damage_spells[spellId]) then
-				sourceSerial, sourceName, sourceFlags = parser:external_damage(spellId, sourceSerial, sourceName, sourceFlags, targetSerial)
+				sourceSerial, sourceName, sourceFlags = parser:external_damage(spellId, sourceSerial, sourceName, sourceFlags, targetSerial, time)
 			--Light of the Martyr - paladin spell which causes damage to the caster it self
 			elseif (spellId == 196917) then -- or spellid == 183998 < healing part
 				return parser:LOTM_damage(token, time, sourceSerial, sourceName, sourceFlags, targetSerial, targetName, targetFlags, spellId, spellName, spellType, amount, overkill, school, resisted, blocked, absorbed, critical, glacing, crushing, isoffhand)
@@ -1924,11 +1924,10 @@
 
 	--returns the serial, name, and flags that the damage should be attributed to
 	--separate function due to main function becoming oversized
-	function parser:external_damage(spellId, sourceSerial, sourceName, sourceFlags, targetSerial)
+	function parser:external_damage(spellId, sourceSerial, sourceName, sourceFlags, targetSerial, time)
 		local newSerial = sourceSerial
 		local newName = sourceName
 		local newFlags = sourceFlags
-		Details:Msg("External damage called successfully. Input values of: ", spellId, sourceSerial, sourceName, sourceFlags, targetSerial)
 		if (spellId == 388009) then --damage from the paladin blessings of the seasons
 			local blessingSource = cacheAnything.paladin_vivaldi_blessings[sourceSerial]
 			if (blessingSource) then
@@ -2047,15 +2046,21 @@
 				countScalecommanderMember = #scalecommander_members_cache
 			end
 			if (cacheAnything.scalecommander_bombardments) then
-				countBombardmentsCasters = #cacheAnything.scalecommander_bombardments
+				--countBombardmentsCasters = #cacheAnything.scalecommander_bombardments
+				--for some reason, above returns 0. using below instead.
+				for k, v in pairs(cacheAnything.scalecommander_bombardments) do
+					countBombardmentsCasters = countBombardmentsCasters + 1
+				end
+			else
 			end
-			if (countScalecommanderMember == 1) then
+			if (countBombardmentsCasters == 1) then
 				for k, v in pairs(cacheAnything.scalecommander_bombardments) do
 					newSerial, newName, newFlags = k, unpack(v)
 				end
 			elseif (countScalecommanderMember >= 2 and countBombardmentsCasters >= 2) then
 				newName = Details.StackedBuffActorName
 				newFlags = 0x514
+				newSerial = "Creature-0-3134-2289-28065-" .. spellId .. "-000164C698"
 			elseif (countScalecommanderMember == 1) then
 				newSerial, newName, newFlags = unpack(scalecommander_members_cache[1])
 			end
@@ -3143,6 +3148,7 @@
 				else
 					cacheAnything.scalecommander_bombardments[sourceSerial] = {sourceName, sourceFlags, 1}
 				end
+				Details:Msg(sourceName, cacheAnything.scalecommander_bombardments[sourceSerial][3])
 			end
 		end
 	end
@@ -7046,7 +7052,7 @@ local SPELL_POWER_PAIN = SPELL_POWER_PAIN or (PowerEnum and PowerEnum.Pain) or 1
 		elseif (IsInGroup()) then
 			local unitIdCache = Details222.UnitIdCache.Party
 			local playerGUID = UnitGUID("player")
-			for i = 1, GetNumGroupMembers()-1 do
+			for i = 1, GetNumGroupMembers() do
 				local unitId = unitIdCache[i]
 
 				local unitName = GetUnitName(unitId, true)
@@ -7080,40 +7086,8 @@ local SPELL_POWER_PAIN = SPELL_POWER_PAIN or (PowerEnum and PowerEnum.Pain) or 1
 					end
 				end
 			end
-			
-			--iterate over the last group member, which is not necesarily the player, to add to aug_members_cache
-			local unitIdExtra = unitIdCache[GetNumGroupMembers()]
-			local unitGUIDExtra = UnitGUID(unitIdExtra)
-			if (Details.cached_specs[unitGUIDExtra] == 1473) then
-				if (unitGUID == playerGUID) then
-					table.insert(aug_members_cache, {unitGUIDExtra, unitNameExtra, 0x511})
-					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x511})
-				else
-					table.insert(aug_members_cache, {unitGUIDExtra, unitNameExtra, 0x512})
-					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x512})
-				end
-			elseif (Details.cached_specs[unitGUIDExtra] == 1467) then
-				if (unitGUID == playerGUID) then
-					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x511})
-				else
-					table.insert(scalecommander_members_cache, {unitGUIDExtra, unitNameExtra, 0x512})
-				end
-			end
-
-			--player
 			local playerName = Details.playername
-
-			raid_members_cache[playerGUID] = playerName
-			groupRoster[playerName] = playerGUID
-
 			local role = _UnitGroupRolesAssigned(playerName)
-			if (role == "TANK") then
-				tanks_members_cache[playerGUID] = true
-			end
-
-			if (auto_regen_power_specs[Details.cached_specs[playerGUID]]) then
-				auto_regen_cache[playerName] = auto_regen_power_specs[Details.cached_specs[playerGUID]]
-			end
 		else
 			local playerName = Details.playername
 			local playerGUID = UnitGUID("player")
