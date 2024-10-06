@@ -1946,7 +1946,7 @@
 				countAugMember = #aug_members_cache
 			end
 			if (countBuffedWithInfernoBless == 1) then
-				sourceSerial, sourceName, sourceFlags = unpack(currentlyBuffedWithInfernoBless[1])
+				newSerial, newName, newFlags = unpack(currentlyBuffedWithInfernoBless[1])
 			elseif (countAugMember >= 2) then
 				newName = Details.StackedBuffActorName
 				newFlags = 0x514
